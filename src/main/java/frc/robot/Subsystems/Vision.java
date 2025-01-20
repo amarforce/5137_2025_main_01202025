@@ -17,9 +17,19 @@ import frc.robot.Constants.Vision_Constants.CameraNames;
 import frc.robot.Constants.Vision_Constants.GameObjects;
 import frc.robot.Utils.VisionDebugLogger;
 
+
+
+/**
+ * Subsystem for handling robot vision using PhotonVision.
+ * This subsystem manages multiple cameras for AprilTag-based localization and object detection.
+ */
+
+
+
+
 public class Vision extends SubsystemBase {
     // Existing AprilTag vision components
-    private final AprilTagFieldLayout fieldLayout;
+    // private final AprilTagFieldLayout fieldLayout;
     private final PhotonCamera frontCamera;
     private final PhotonPoseEstimator frontPoseEstimator;
     private final PhotonCamera leftCamera;
@@ -31,16 +41,25 @@ public class Vision extends SubsystemBase {
     // Debug logger
     private final VisionDebugLogger debugLogger;
 
+    
+    /**
+     * Constructor for the Vision class.
+     * Initializes the vision subsystem, including AprilTag components for localization
+     * and a separate camera for object detection. It also initializes a debug logger
+     * for vision data.
+     */
     public Vision() {
         // Initialize AprilTag components (existing functionality)
         fieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
 
+        // Initialize AprilTag components (existing functionality)
         frontCamera = new PhotonCamera(CameraNames.FRONT_CAMERA);
         frontPoseEstimator = new PhotonPoseEstimator(
             fieldLayout, 
             PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, 
             Vision_Constants.robotToFrontCamera
         );
+
 
         leftCamera = new PhotonCamera(CameraNames.LEFT_CAMERA);
         leftPoseEstimator = new PhotonPoseEstimator(
@@ -49,6 +68,7 @@ public class Vision extends SubsystemBase {
             Vision_Constants.robotToLeftCamera
         );
 
+        // Initialize object detection camera
         frontObjectCamera = new PhotonCamera(CameraNames.FRONT_OBJECT_CAMERA);
         
         // Initialize debug logger
@@ -60,6 +80,7 @@ public class Vision extends SubsystemBase {
         return frontPoseEstimator.update(frontCamera.getLatestResult());
     }
 
+    // Existing AprilTag methods
     public Optional<EstimatedRobotPose> getLeftPose() {
         return leftPoseEstimator.update(leftCamera.getLatestResult());
     }
@@ -71,6 +92,7 @@ public class Vision extends SubsystemBase {
             return Optional.empty();
         }
         
+        // Existing object detection logic
         PhotonTrackedTarget target = result.getBestTarget();
         if (target.getPoseAmbiguity() > Vision_Constants.Processing.MIN_TARGET_CONFIDENCE) {
             return Optional.empty();
@@ -84,16 +106,19 @@ public class Vision extends SubsystemBase {
         return target.map(t -> t.getYaw()).orElse(0.0);
     }
 
+    // Existing object detection methods
     public String getObjectClass() {
         return getClosestCoral().isPresent() ? GameObjects.CORAL : GameObjects.UNKNOWN;
     }
 
+    // Existing periodic method
     @Override
     public void periodic() {
         updateDashboard();
         logVisionData();
     }
 
+    // Existing private method
     private void updateDashboard() {
         // AprilTag data
         var frontPose = getFrontPose();
@@ -115,6 +140,22 @@ public class Vision extends SubsystemBase {
         });
     }
 
+// Existing private method
+    /**
+     * Logs vision data for debugging purposes.
+     * This includes the X coordinate of the detected object and its class.
+     */
+    private void logVisionData() {
+        debugLogger.logVisionData(getObjectX(), getObjectClass());
+    }
+
+
+    // Start of Selection
+    /**
+     * Logs vision data for debugging and analysis.
+     * This method retrieves the current object's X coordinate and its classification
+     * and logs this information using the {@link frc.robot.Utils.DebugLogger}.
+     */
     private void logVisionData() {
         debugLogger.logVisionData(getObjectX(), getObjectClass());
     }
