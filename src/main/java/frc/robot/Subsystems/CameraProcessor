@@ -1,0 +1,113 @@
+package frc.robot.Subsystems;
+
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.cscore.UsbCamera;
+import edu.wpi.first.cscore.CvSink;
+import edu.wpi.first.cscore.CvSource;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.opencv.core.Mat;
+import org.opencv.core.Point;
+import org.opencv.core.Scalar;
+import org.opencv.imgproc.Imgproc;
+import frc.robot.Constants.Vision_Constants.CameraSettings;
+import frc.robot.Utils.VisionLogger;
+
+public class CameraProcessor extends SubsystemBase {
+    private final Thread processingThread;
+    private boolean processingEnabled = true;
+    private final VisionLogger logger;
+    private final Vision vision;
+    
+    public CameraProcessor(Vision vision) {
+        this.vision = vision;
+        this.logger = new VisionLogger();
+        
+        processingThread = new Thread(this::processingLoop);
+        processingThread.setDaemon(true);
+        processingThread.start();
+        
+        logger.logSystemEvent(Level.INFO, "CameraProcessor initialized");
+    }
+    
+    private void processingLoop() {
+        // Camera setup
+        UsbCamera camera = CameraServer.startAutomaticCapture();
+        camera.setResolution(
+            CameraSettings.RESOLUTION_WIDTH,
+            CameraSettings.RESOLUTION_HEIGHT
+        );
+        camera.setFPS(CameraSettings.FPS);
+        
+        // Create OpenCV sinks and sources
+        CvSink cvSink = CameraServer.getVideo();
+        CvSource processedStream = CameraServer.putVideo("Processed", 
+            CameraSettings.RESOLUTION_WIDTH,
+            CameraSettings.RESOLUTION_HEIGHT
+        );
+        
+        // Allocate images
+        Mat frame = new Mat();
+        
+        while (!Thread.interrupted() && processingEnabled) {
+            try {
+                if (cvSink.grabFrame(frame) == 0) {
+                    processedStream.notifyError(cvSink.getError());
+                    logger.logSystemEvent(Level.WARNING, 
+                        "Failed to grab frame: " + cvSink.getError());
+                    continue;
+                }
+                
+                // Process frame with overlays
+                processFrame(frame);
+                
+                // Output processed frame
+                processedStream.putFrame(frame);
+                
+            } catch (Exception e) {
+                logger.logError("Error in processing loop", e);
+            }
+        }
+        
+        frame.release();
+    }
+    
+    private void processFrame(Mat frame) {
+        // Get current vision data
+        var coralTarget = vision.getClosestCoral();
+        
+        // Add overlays if target detected
+        coralTarget.ifPresent(target -> {
+            // Draw targeting box
+            double centerX = frame.cols()/2.0 + (target.getYaw() * frame.cols()/80.0);
+            double centerY = frame.rows()/2.0 - (target.getPitch() * frame.rows()/60.0);
+            
+            Imgproc.rectangle(
+                frame,
+                new Point(centerX - 20, centerY - 20),
+                new Point(centerX + 20, centerY + 20),
+                new Scalar(0, 255, 0),
+                2
+            );
+            
+            // Add data overlay
+            String info = String.format("Yaw: %.1f° Dist: %.1fm",
+                target.getYaw(),
+                target.getBestCameraToTarget().getTranslation().getNorm()
+            );
+            
+            Imgproc.putText(
+                frame,
+                info,
+                new Point(10, 30),
+                Imgproc.FONT_HERSHEY_SIMPLEX,
+                0.8,
+                new Scalar(0, 255, 0),
+                2
+            );
+        });
+    }
+    
+    public void stop() {
+        processingEnabled = false;
+    }
+}

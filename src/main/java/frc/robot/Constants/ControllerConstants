@@ -1,0 +1,47 @@
+package frc.robot.Constants;
+
+import edu.wpi.first.wpilibj.PS5Controller;
+
+public final class ControllerConstants {
+    // Controller ports
+    public static final int DRIVER_CONTROLLER_PORT = 0;
+    public static final int OPERATOR_CONTROLLER_PORT = 1;
+    
+    // Deadbands
+    public static final double STICK_DEADBAND = 0.1;
+    
+    // PS5 Button/Axis Mappings (for reference)
+    public static final class PS5Buttons {
+        // Face Buttons
+        public static final int SQUARE = PS5Controller.Button.kSquare.value;
+        public static final int CROSS = PS5Controller.Button.kCross.value;
+        public static final int CIRCLE = PS5Controller.Button.kCircle.value;
+        public static final int TRIANGLE = PS5Controller.Button.kTriangle.value;
+        
+        // Bumpers & Triggers
+        public static final int L1 = PS5Controller.Button.kL1.value;
+        public static final int R1 = PS5Controller.Button.kR1.value;
+        public static final int L2 = PS5Controller.Button.kL2.value;
+        public static final int R2 = PS5Controller.Button.kR2.value;
+        
+        // Other buttons
+        public static final int CREATE = PS5Controller.Button.kCreate.value;
+        public static final int OPTIONS = PS5Controller.Button.kOptions.value;
+        public static final int PS = PS5Controller.Button.kPS.value;
+        public static final int TOUCHPAD = PS5Controller.Button.kTouchpad.value;
+    }
+    
+    public static final class PS5Axes {
+        // Left stick
+        public static final int LEFT_X = PS5Controller.Axis.kLeftX.value;
+        public static final int LEFT_Y = PS5Controller.Axis.kLeftY.value;
+        
+        // Right stick
+        public static final int RIGHT_X = PS5Controller.Axis.kRightX.value;
+        public static final int RIGHT_Y = PS5Controller.Axis.kRightY.value;
+        
+        // Triggers
+        public static final int L2 = PS5Controller.Axis.kL2.value;
+        public static final int R2 = PS5Controller.Axis.kR2.value;
+    }
+}
